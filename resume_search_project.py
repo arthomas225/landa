@@ -1,7 +1,6 @@
 import streamlit as st
 import json
 import os
-import shutil
 import numpy as np
 from typing import Dict, List, Tuple, Any
 from sentence_transformers import SentenceTransformer
@@ -151,15 +150,23 @@ class ResumeMatcherUI:
         )
 
         if selected_candidates:
-            save_dir = st.text_input("Enter directory to save resumes:", value="./selected_resumes")
+            save_path = st.text_input(
+                "Enter full path to save resumes:",
+                value="./selected_resumes"  # Default value
+            )
 
             if st.button("Save Resumes"):
-                os.makedirs(save_dir, exist_ok=True)
-                for name in selected_candidates:
-                    resume_data = next(resume for resume, _, _ in top_matches if resume == name)
-                    with open(os.path.join(save_dir, f"{name}.txt"), "w", encoding="utf-8") as f:
-                        f.write(st.session_state.data[resume_data]['full_text'])
-                st.success(f"Resumes saved to {save_dir}")
+                try:
+                    os.makedirs(save_path, exist_ok=True)  # Ensure the path exists
+                    for name in selected_candidates:
+                        resume_data = next(
+                            resume for resume, _, _ in top_matches if resume == name
+                        )
+                        with open(os.path.join(save_path, f"{name}.txt"), "w", encoding="utf-8") as f:
+                            f.write(st.session_state.data[name]['full_text'])
+                    st.success(f"Resumes saved to {save_path}")
+                except Exception as e:
+                    st.error(f"Failed to save resumes: {e}")
 
     def run(self):
         """Main entry point for the Streamlit app."""
