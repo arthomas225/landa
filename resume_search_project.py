@@ -1,6 +1,8 @@
 import streamlit as st
 import json
 import os
+import zipfile
+import io
 import numpy as np
 from typing import Dict, List, Tuple, Any
 from sentence_transformers import SentenceTransformer
@@ -117,7 +119,7 @@ class ResumeMatcherUI:
         return required_skills, required_certs, search_query
 
     def display_results(self, matches: List[MatchResult]):
-        """Display the top 20 matching resumes in a table and allow saving full resumes."""
+        """Display the top 20 matching resumes in a table and allow saving full resumes as a zip file."""
         if not matches:
             st.warning("No matches found.")
             return
@@ -143,30 +145,28 @@ class ResumeMatcherUI:
             mime="text/csv"
         )
 
-        # Allow saving full resumes
+        # Allow saving full resumes as a zip file
         selected_candidates = st.multiselect(
-            "Select candidates to save full resumes:", 
+            "Select candidates to download full resumes:", 
             options=[name for name, _, _ in top_matches]
         )
 
         if selected_candidates:
-            save_path = st.text_input(
-                "Enter full path to save resumes:",
-                value="./selected_resumes"  # Default value
-            )
-
-            if st.button("Save Resumes"):
-                try:
-                    os.makedirs(save_path, exist_ok=True)  # Ensure the path exists
-                    for name in selected_candidates:
-                        resume_data = next(
-                            resume for resume, _, _ in top_matches if resume == name
-                        )
-                        with open(os.path.join(save_path, f"{name}.txt"), "w", encoding="utf-8") as f:
-                            f.write(st.session_state.data[name]['full_text'])
-                    st.success(f"Resumes saved to {save_path}")
-                except Exception as e:
-                    st.error(f"Failed to save resumes: {e}")
+            if st.button("Download Resumes as ZIP"):
+                with io.BytesIO() as zip_buffer:
+                    with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+                        for name in selected_candidates:
+                            resume_data = next(
+                                resume for resume, _, _ in top_matches if resume == name
+                            )
+                            zip_file.writestr(f"{name}.txt", st.session_state.data[name]['full_text'])
+                    zip_buffer.seek(0)
+                    st.download_button(
+                        label="Download ZIP",
+                        data=zip_buffer.getvalue(),
+                        file_name="selected_resumes.zip",
+                        mime="application/zip"
+                    )
 
     def run(self):
         """Main entry point for the Streamlit app."""
