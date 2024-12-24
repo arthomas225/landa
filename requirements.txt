@@ -1,7 +1,8 @@
-streamlit
-jsonschema
-numpy
-pandas
-scikit-learn
-sentence-transformers
-nltk
+streamlit==1.41.1
+sentence-transformers==3.1.1
+torch==2.4.1
+scikit-learn==1.5.2
+numpy==2.1.1
+pandas==2.2.3
+nltk==3.9.1
+PySimpleGUI==5.0.6
